@@ -1,0 +1,52 @@
+name: Monthly Data Update
+
+on:
+   schedule:
+      - cron: '0 3 1 * *'
+   workflow_dispatch:
+
+permissions:
+   contents: write
+
+jobs:
+   update-data:
+      runs-on: ubuntu-latest
+
+      steps:
+         - name: Checkout repository
+           uses: actions/checkout@v6
+
+         - name: Setup Deno
+           uses: denoland/setup-deno@v2
+
+         - name: Run data update
+           run: deno task update
+
+         - name: Check for data changes
+           id: data_changes
+           shell: bash
+           run: |
+              if git diff --quiet -- data/tlds.csv data/tlds.json data/tlds.tsv; then
+                echo "changed=false" >> "$GITHUB_OUTPUT"
+              else
+                echo "changed=true" >> "$GITHUB_OUTPUT"
+              fi
+
+         - name: Commit and push updated data
+           if: steps.data_changes.outputs.changed == 'true'
+           shell: bash
+           env:
+              GIT_AUTHOR_NAME: ${{ github.actor }}
+              GIT_AUTHOR_EMAIL: ${{ format('{0}+{1}@users.noreply.github.com', github.actor_id, github.actor) }}
+           run: |
+              git config user.name "$GIT_AUTHOR_NAME"
+              git config user.email "$GIT_AUTHOR_EMAIL"
+
+              month="$(date -u +'%Y-%m')"
+              git add data/tlds.csv data/tlds.json data/tlds.tsv
+              git commit -m "chore(data): update TLD snapshot for ${month}"
+              git push origin HEAD:main
+
+         - name: No changes message
+           if: steps.data_changes.outputs.changed == 'false'
+           run: echo "No dataset changes detected; nothing to commit."
