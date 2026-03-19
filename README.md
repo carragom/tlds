@@ -63,14 +63,20 @@ const rows = await fetchDataset({ format: 'array' })
 
 ## 3) Use as a CLI
 
+### Run it directly from JSR
+
+```bash
+deno run --reload --allow-net=www.iana.org:443 jsr:@carragom/tlds/cli fetch
+```
+
+```bash
+deno run --reload --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli update
+```
+
 ### Install globally
 
 ```bash
-deno install --global \
-  --allow-net=www.iana.org:443 \
-  --allow-write=data \
-  --allow-read=data \
-  jsr:@carragom/tlds
+deno install --global --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli
 ```
 
 ### Fetch to stdout (default: TSV)
