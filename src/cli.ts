@@ -1,3 +1,8 @@
+/**
+ * Command-line interface for the IANA root zone TLD dataset.
+ * @module
+ */
+
 import { parseArgs } from '@std/cli'
 
 import {
@@ -7,6 +12,11 @@ import {
 	updateDataset,
 } from './dataset.ts'
 
+/**
+ * Main entry point for the CLI.
+ * @param args CLI arguments
+ * @returns Promise<void>
+ */
 export async function main(args: string[] = Deno.args): Promise<void> {
 	const [command, ...rest] = args
 
