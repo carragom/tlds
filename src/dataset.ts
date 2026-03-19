@@ -10,8 +10,7 @@ const DEFAULT_CSV_OUTPUT_PATH = 'data/tlds.csv'
 const DEFAULT_JSON_OUTPUT_PATH = 'data/tlds.json'
 const DEFAULT_TSV_OUTPUT_PATH = 'data/tlds.tsv'
 
-const RECORD_KEYS = ['domain', 'type', 'manager'] as const
-const CSV_HEADER = [...RECORD_KEYS]
+const CSV_HEADER = ['domain', 'type', 'manager'] as const
 
 const VALID_TYPES = new Set([
 	'country-code',
@@ -22,15 +21,49 @@ const VALID_TYPES = new Set([
 	'test',
 ])
 
-export type TldRecord = Record<(typeof RECORD_KEYS)[number], string>
+/**
+ * Normalized TLD entry from the IANA root zone database.
+ *
+ * - `domain` always uses `.label` form (for example `.com`).
+ * - `type` is the IANA category string for the TLD.
+ * - `manager` is the registry/manager text as published by IANA.
+ */
+export type TldRecord = {
+	domain: string
+	type: string
+	manager: string
+}
 
+/**
+ * Output format supported by {@link fetchDataset}.
+ *
+ * - `array` returns structured {@link TldRecord} objects.
+ * - `csv`, `json`, and `tsv` return serialized text.
+ */
 export type DatasetFormat = 'csv' | 'json' | 'tsv' | 'array'
 
-type DatasetErrorCode =
+/**
+ * Row-level validation codes returned in {@link DatasetError}.
+ *
+ * - `ERR_INVALID_TYPE`: the row `type` is not a recognized IANA category.
+ * - `ERR_INVALID_DOMAIN_SHAPE`: the domain is not a single `.label` value.
+ * - `ERR_INVALID_DOMAIN_IDNA`: the domain label fails IDNA ToASCII conversion.
+ */
+export type DatasetErrorCode =
 	| 'ERR_INVALID_TYPE'
 	| 'ERR_INVALID_DOMAIN_SHAPE'
 	| 'ERR_INVALID_DOMAIN_IDNA'
 
+/**
+ * Validation problem found while processing one row from the upstream dataset.
+ *
+ * These errors are returned in results instead of being thrown, so callers can
+ * inspect partial success and decide how to handle invalid rows.
+ *
+ * - `row` is 1-based within the parsed IANA table rows.
+ * - `field` identifies the column that failed validation.
+ * - `value` preserves the offending source value.
+ */
 export type DatasetError = {
 	code: DatasetErrorCode
 	row: number
@@ -39,12 +72,25 @@ export type DatasetError = {
 	message: string
 }
 
+/**
+ * Options for fetching and formatting the current TLD dataset.
+ *
+ * - `format` selects the returned representation.
+ * - `fetchImpl` lets tests or custom runtimes inject their own fetch function.
+ * - `pretty` only affects JSON output.
+ */
 export type FetchDatasetOptions = {
 	format: DatasetFormat
 	fetchImpl?: typeof fetch
 	pretty?: boolean
 }
 
+/**
+ * Options for downloading the current dataset and writing snapshot files.
+ *
+ * Any omitted output path falls back to the default file under `data/`.
+ * `fetchImpl` can be replaced for tests or custom runtimes.
+ */
 export type UpdateDatasetOptions = {
 	csvOutputPath?: string
 	jsonOutputPath?: string
@@ -52,6 +98,13 @@ export type UpdateDatasetOptions = {
 	fetchImpl?: typeof fetch
 }
 
+/**
+ * Result returned by {@link updateDataset} after writing snapshot files.
+ *
+ * - `errors` contains row-level validation issues encountered during processing.
+ * - `writtenFiles` reports the paths that were written.
+ * - `counts` summarizes valid and invalid row totals.
+ */
 export type UpdateDatasetResult = {
 	errors: DatasetError[]
 	writtenFiles: {
@@ -284,6 +337,53 @@ async function fetchRows(fetchImpl: typeof fetch): Promise<string[][]> {
 	return extractRowsFromHtml(html)
 }
 
+/**
+ * Fetch and process TLD (Top-Level Domain) data from the IANA Root Zone Database.
+ *
+ * This function retrieves the current list of TLDs from IANA, validates and normalizes
+ * the data, and returns it in the requested format. It provides type-safe overloads
+ * for different output formats.
+ *
+ * Validation includes:
+ * - Domain shape validation (must be `.label` format with single label)
+ * - Type validation against known IANA types
+ * - IDNA ToASCII conversion for internationalized domain names
+ * - Automatic stripping of bidi display marks from domains
+ *
+ * @param options - Configuration options for fetching and formatting
+ * @param options.format - Output format: 'array', 'csv', 'json', or 'tsv'
+ * @param options.fetchImpl - Custom fetch implementation (defaults to native fetch)
+ * @param options.pretty - Pretty-print JSON output (only for 'json' format)
+ * @returns Promise resolving to an object containing:
+ *   - `result`: The formatted TLD data (array or string depending on format)
+ *   - `errors`: Array of validation errors encountered during processing
+ *
+ * @throws {Error} When the IANA page structure changes or network request fails
+ *
+ * @example
+ * // Fetch TLDs as an array
+ * const { result, errors } = await fetchDataset({
+ *   format: 'array'
+ * });
+ * console.log(result[0]); // { domain: '.com', type: 'generic', manager: 'VeriSign Global...' }
+ *
+ * @example
+ * // Fetch TLDs as formatted CSV
+ * const { result, errors } = await fetchDataset({
+ *   format: 'csv'
+ * });
+ * console.log(result); // "domain,type,manager\n.com,generic,VeriSign..."
+ *
+ * @example
+ * // Fetch TLDs as pretty-printed JSON
+ * const { result, errors } = await fetchDataset({
+ *   format: 'json',
+ *   pretty: true
+ * });
+ * if (errors.length > 0) {
+ *   console.warn(`Processing had ${errors.length} validation errors`);
+ * }
+ */
 export async function fetchDataset(
 	options: FetchDatasetOptions & { format: 'array' },
 ): Promise<{ result: TldRecord[]; errors: DatasetError[] }>
@@ -303,6 +403,42 @@ export async function fetchDataset(
 	}
 }
 
+/**
+ * Fetch the current IANA root zone dataset and write CSV, JSON, and TSV snapshots.
+ *
+ * This function downloads the live root zone table, validates and normalizes the
+ * rows, then writes three snapshot files to disk. Invalid rows are excluded from
+ * the written output and reported in the returned `errors` array.
+ *
+ * Default output paths:
+ * - CSV: `data/tlds.csv`
+ * - JSON: `data/tlds.json`
+ * - TSV: `data/tlds.tsv`
+ *
+ * Error handling:
+ * - Row validation issues are returned in `errors`.
+ * - Network failures, upstream HTML structure changes, and file system write
+ *   failures are thrown.
+ *
+ * @param options Configuration for output paths and fetch behavior.
+ * @param options.csvOutputPath Destination path for the CSV snapshot.
+ * @param options.jsonOutputPath Destination path for the JSON snapshot.
+ * @param options.tsvOutputPath Destination path for the TSV snapshot.
+ * @param options.fetchImpl Custom fetch implementation (defaults to native fetch).
+ * @returns Paths written, validation errors, and counts of valid/error rows.
+ *
+ * @example
+ * ```ts
+ * const result = await updateDataset({
+ *   csvOutputPath: 'snapshot/tlds.csv',
+ *   jsonOutputPath: 'snapshot/tlds.json',
+ *   tsvOutputPath: 'snapshot/tlds.tsv',
+ * })
+ *
+ * console.log(result.writtenFiles.json)
+ * console.log(result.counts.validRows)
+ * ```
+ */
 export async function updateDataset(
 	options: UpdateDatasetOptions = {},
 ): Promise<UpdateDatasetResult> {

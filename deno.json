@@ -45,10 +45,10 @@
 	},
 	"imports": {
 		"@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.56",
-		"@std/assert": "jsr:@std/assert@1",
-		"@std/cli": "jsr:@std/cli@1",
-		"@std/csv": "jsr:@std/csv@1",
-		"@std/fs": "jsr:@std/fs@1",
-		"@std/path": "jsr:@std/path@1"
+		"@std/assert": "jsr:@std/assert@^1.0.19",
+		"@std/cli": "jsr:@std/cli@^1.0.28",
+		"@std/csv": "jsr:@std/csv@^1.0.6",
+		"@std/fs": "jsr:@std/fs@^1.0.23",
+		"@std/path": "jsr:@std/path@^1.1.4"
 	}
 }
