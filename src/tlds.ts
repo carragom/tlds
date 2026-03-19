@@ -7,38 +7,6 @@ import {
 	updateDataset,
 } from './dataset.ts'
 
-function usage(): string {
-	return `Usage:
-  deno run <file> fetch [--format tsv|csv|json] [--pretty]
-  deno run <file> update
-
-fetch:
-  --format defaults to tsv
-  --pretty only affects --format json
-  outputs to stdout only (does not write data files)
-  strips domain bidi display marks (U+200E, U+200F)
-  validates type and domain, excludes invalid rows, reports errors
-  normalizes manager by replacing tabs/newlines with spaces
-
-update:
-  writes data/tlds.csv
-  writes data/tlds.json
-  writes data/tlds.tsv
-  strips domain bidi display marks (U+200E, U+200F)
-  validates type and domain, excludes invalid rows, reports errors
-  writes manager as received (no normalization)`
-}
-
-function printErrors(errors: DatasetError[]): void {
-	for (const error of errors) {
-		console.error(error.message)
-	}
-
-	if (errors.length > 0) {
-		Deno.exitCode = 1
-	}
-}
-
 export async function main(args: string[] = Deno.args): Promise<void> {
 	const [command, ...rest] = args
 
@@ -76,6 +44,38 @@ export async function main(args: string[] = Deno.args): Promise<void> {
 	}
 
 	throw new Error(usage())
+}
+
+function printErrors(errors: DatasetError[]): void {
+	for (const error of errors) {
+		console.error(error.message)
+	}
+
+	if (errors.length > 0) {
+		Deno.exitCode = 1
+	}
+}
+
+function usage(): string {
+	return `Usage:
+  deno run <file> fetch [--format tsv|csv|json] [--pretty]
+  deno run <file> update
+
+fetch:
+  --format defaults to tsv
+  --pretty only affects --format json
+  outputs to stdout only (does not write data files)
+  strips domain bidi display marks (U+200E, U+200F)
+  validates type and domain, excludes invalid rows, reports errors
+  normalizes manager by replacing tabs/newlines with spaces
+
+update:
+  writes data/tlds.csv
+  writes data/tlds.json
+  writes data/tlds.tsv
+  strips domain bidi display marks (U+200E, U+200F)
+  validates type and domain, excludes invalid rows, reports errors
+  writes manager as received (no normalization)`
 }
 
 if (import.meta.main) {

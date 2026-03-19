@@ -70,8 +70,7 @@ deno install --global \
   --allow-net=www.iana.org:443 \
   --allow-write=data \
   --allow-read=data \
-  -n tlds \
-  jsr:@carragom/src/cli.ts
+  jsr:@carragom/tlds
 ```
 
 ### Fetch to stdout (default: TSV)

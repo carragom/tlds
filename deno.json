@@ -2,7 +2,8 @@
 	"name": "@carragom/tlds",
 	"version": "0.1.0",
 	"exports": {
-		".": "./src/mod.ts"
+		".": "./src/mod.ts",
+		"./tlds": "./src/tlds.ts"
 	},
 	"license": "MIT",
 	"lock": false,
@@ -33,15 +34,15 @@
 	},
 	"tasks": {
 		"fetch": {
-			"command": "deno run --allow-net=www.iana.org:443 src/cli.ts fetch",
+			"command": "deno run --allow-net=www.iana.org:443 src/tlds.ts fetch",
 			"description": "Fetch the IANA TLD dataset and prints it to stdout in the default output format (TSV). Use --format csv|json for a different format."
 		},
 		"update": {
-			"command": "deno run --allow-net=www.iana.org:443 --allow-write=data --allow-read=data src/cli.ts update",
+			"command": "deno run --allow-net=www.iana.org:443 --allow-write=data --allow-read=data src/tlds.ts update",
 			"description": "Fetch the IANA TLD dataset and updates the local dataset files data/*."
 		},
 		"install": {
-			"command": "deno install --global --allow-net=www.iana.org:443 --allow-write=data --allow-read=data -n tlds src/cli.ts"
+			"command": "deno install --global --allow-net=www.iana.org:443 --allow-write=data --allow-read=data tlds"
 		},
 		"test": "deno test -P"
 	},
