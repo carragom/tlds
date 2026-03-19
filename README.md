@@ -65,25 +65,27 @@ const rows = await fetchDataset({ format: 'array' })
 
 ### Run it directly from JSR
 
-```bash
-deno run --reload --allow-net=www.iana.org:443 jsr:@carragom/tlds/cli fetch
-```
+Run the `fetch` command from JSR
 
-```bash
-deno run --reload --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli update
-```
+    deno run --reload --allow-net=www.iana.org:443 jsr:@carragom/tlds/cli fetch
+
+Run the `update` command from JSR
+
+    deno run --reload --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli update
 
 ### Install globally
 
-```bash
-deno install --global --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli
-```
+You can install it locally as a command
+
+    deno install --global --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli -n tlds
+
+You can update it to the latest version
+
+    deno install --force --reload --global --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli -n tlds
 
 ### Fetch to stdout (default: TSV)
 
-```bash
-tlds fetch
-```
+    tlds fetch
 
 Choose format:
 
@@ -96,12 +98,10 @@ tlds fetch --format json --pretty
 
 ### Update local data files
 
-```bash
-tlds update
-```
+    tlds update
 
 This writes:
 
-- `data/tlds.csv`
-- `data/tlds.json`
-- `data/tlds.tsv`
+- `./data/tlds.csv`
+- `./data/tlds.json`
+- `./data/tlds.tsv`
