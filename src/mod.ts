@@ -28,7 +28,7 @@
  *
  * @example Install the CLI globally with Deno
  * ```sh
- * deno install --global --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli -n tlds
+ * deno install --global --reload --name tlds --allow-net=www.iana.org:443 --allow-write=data --allow-read=data jsr:@carragom/tlds/cli
  * tlds fetch --format json --pretty
  * tlds update
  * ```
